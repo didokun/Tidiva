@@ -1,0 +1,95 @@
+{
+  "identifier": "190a11bc-fc43-48f7-b5b1-474ab8b3f56d",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "80",
+      "familyShareable": false,
+      "internalID": "e892e8ce-53b0-48e9-8cc0-03b8303d2c63",
+      "localizations": [
+        {
+          "locale": "en_US",
+          "displayName": "Tidiva Lifetime",
+          "description": "Lifetime Premium access."
+        },
+        {
+          "locale": "fr_FR",
+          "displayName": "Tidiva à vie",
+          "description": "Accès Premium à vie."
+        }
+      ],
+      "productID": "tidiva.premium.lifetime",
+      "referenceName": "Tidiva Lifetime",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_locale": "en_US",
+    "_storefront": "USA"
+  },
+  "subscriptionGroups": [
+    {
+      "id": "e1458d43-6cf0-4a4f-9058-00750ac6cdf3",
+      "localizations": [],
+      "name": "Tidiva Premium",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "5",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "7d2bc092-7ee6-424c-92af-94e7bd725e8a",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Ad-free routines and 30-day progress.",
+              "displayName": "Tidiva Premium monthly",
+              "locale": "en_US"
+            },
+            {
+              "description": "Routines sans pub et suivi sur 30 jours.",
+              "displayName": "Tidiva Premium mensuel",
+              "locale": "fr_FR"
+            }
+          ],
+          "productID": "tidiva.premium.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Tidiva Premium monthly",
+          "subscriptionGroupID": "e1458d43-6cf0-4a4f-9058-00750ac6cdf3",
+          "type": "RecurringSubscription"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "50",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "76285502-51e4-4470-886e-81ba408c58ee",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Ad-free routines and 30-day progress.",
+              "displayName": "Tidiva Premium yearly",
+              "locale": "en_US"
+            },
+            {
+              "description": "Routines sans pub et suivi sur 30 jours.",
+              "displayName": "Tidiva Premium annuel",
+              "locale": "fr_FR"
+            }
+          ],
+          "productID": "tidiva.premium.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Tidiva Premium yearly",
+          "subscriptionGroupID": "e1458d43-6cf0-4a4f-9058-00750ac6cdf3",
+          "type": "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

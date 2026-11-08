@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scheme LastUpgradeVersion="2660" version="1.7">
+  <BuildAction parallelizeBuildables="YES" buildImplicitDependencies="YES"><BuildActionEntries><BuildActionEntry buildForTesting="YES" buildForRunning="YES" buildForProfiling="YES" buildForArchiving="YES" buildForAnalyzing="YES"><BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="0000000000000000000000A4" BuildableName="Tidiva.app" BlueprintName="Tidiva" ReferencedContainer="container:Tidiva.xcodeproj"/></BuildActionEntry></BuildActionEntries></BuildAction>
+  <TestAction buildConfiguration="Debug" shouldUseLaunchSchemeArgsEnv="YES"/>
+  <LaunchAction buildConfiguration="Debug" launchStyle="0" useCustomWorkingDirectory="NO" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.DebuggerFoundation.Launcher.LLDB">
+    <BuildableProductRunnable runnableDebuggingMode="0"><BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="0000000000000000000000A4" BuildableName="Tidiva.app" BlueprintName="Tidiva" ReferencedContainer="container:Tidiva.xcodeproj"/></BuildableProductRunnable>
+    <StoreKitConfigurationFileReference identifier="../../Tidiva.storekit"/>
+  </LaunchAction>
+  <ProfileAction buildConfiguration="Release" shouldUseLaunchSchemeArgsEnv="YES"><BuildableProductRunnable runnableDebuggingMode="0"><BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="0000000000000000000000A4" BuildableName="Tidiva.app" BlueprintName="Tidiva" ReferencedContainer="container:Tidiva.xcodeproj"/></BuildableProductRunnable></ProfileAction>
+  <AnalyzeAction buildConfiguration="Debug"/>
+  <ArchiveAction buildConfiguration="Release" revealArchiveInOrganizer="YES"/>
+</Scheme>
