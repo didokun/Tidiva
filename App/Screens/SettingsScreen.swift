@@ -19,6 +19,7 @@ struct SettingsScreen: View {
                     link("Your profile", "person.crop.circle") {
                         Form { ProfileFields().listRowBackground(Color.clear) }
                     }
+                    link("Work", "briefcase") { WorkSettingsScreen() }
                     link("My Home", "house") {
                         Form {
                             ForEach(1...max(1, rhythm.floors), id: \.self) { level in
@@ -38,6 +39,7 @@ struct SettingsScreen: View {
                                     Text(PlanningRules.durationLabel($0)).tag($0)
                                 }
                             }
+                            WorkdayPicker()
                             Button("Review my setup") { setup = true }
                         }
                     }
@@ -72,10 +74,45 @@ struct SettingsScreen: View {
             destination().navigationTitle(title).navigationBarTitleDisplayMode(.inline)
         } label: {
             HStack(spacing: 14) {
-                Image(systemName: icon).foregroundStyle(Theme.pine)
-                    .frame(width: 38, height: 38).background(Theme.mint, in: RoundedRectangle(cornerRadius: 12))
+                Image(systemName: icon).foregroundStyle(Theme.brown)
+                    .frame(width: 38, height: 38).background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
                 Text(title).font(.headline)
             }.padding(.vertical, 3)
+        }
+    }
+}
+
+private struct WorkSettingsScreen: View {
+    private var schedule = WorkSchedule()
+    private var rhythm = HomeRhythm()
+
+    var body: some View {
+        Form {
+            Section("Where do you usually work?") {
+                Picker("Work", selection: Binding(get: { schedule.profile }, set: { schedule.profile = $0 })) {
+                    ForEach(["Office", "Remote", "Hybrid", "Variable"], id: \.self) { mode in
+                        Text(LocalizedStringKey(mode)).tag(mode)
+                    }
+                }.pickerStyle(.inline).labelsHidden()
+            }
+            if schedule.profile == "Hybrid" {
+                Section("Which days do you work at the office?") {
+                    ForEach(0..<7, id: \.self) { offset in
+                        let day = (Calendar.current.firstWeekday - 1 + offset) % 7 + 1
+                        let bit = 1 << day
+                        Toggle(Calendar.current.weekdaySymbols[day - 1], isOn: Binding {
+                            schedule.officeDays & bit != 0
+                        } set: { enabled in
+                            schedule.officeDays = enabled ? schedule.officeDays | bit : schedule.officeDays & ~bit
+                        })
+                    }
+                }
+            }
+            if schedule.profile != "Office", !rhythm.rooms.isEmpty {
+                Picker("Where do you work at home?", selection: rhythm.$workspace) {
+                    ForEach(rhythm.rooms) { room in Text(rhythm.label(room)).tag(room.rawValue) }
+                }
+            }
         }
     }
 }

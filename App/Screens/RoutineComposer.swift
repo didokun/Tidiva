@@ -29,6 +29,7 @@ struct RoutineComposer: View {
     private enum Page: Hashable {
         case floor(Int), room(Room), review
     }
+    private let selectionKey = "tidiva.routineIncludedRooms"
     @State private var excludedRooms = Set<Room>()
     @State private var pageIndex = 0
     @State private var addingTo: Room?
@@ -36,6 +37,9 @@ struct RoutineComposer: View {
     @State private var taskNotes = ""
     @State private var taskName = ""
     @State private var taskMinutes = 5
+    private var schedule = WorkSchedule()
+    private var workdays: Int { schedule.avoided }
+    @State private var confirmedDates: [UUID: Date] = [:]
     @State private var stage: Int?
     @State private var confirmExit = false
     @State private var failed = false
@@ -96,13 +100,18 @@ struct RoutineComposer: View {
                             } label: { Label("Add my own task", systemImage: "plus.circle.fill") }
                         } header: { Label(rhythm.label(room), systemImage: room.symbol) }
                     case .review:
+                        let dates = plannedDates
+                        WorkdayPicker()
                         if chosen.isEmpty { Text("No tasks selected") }
                         ForEach(orderedRooms) { room in
                             let tasks = chosen.filter { $0.room == room }
                             if !tasks.isEmpty {
                                 Section(rhythm.label(room)) {
                                     ForEach(tasks) { task in
-                                        LabeledContent { Text("\(task.minutes) minutes") } label: { Text(LocalizedStringKey(task.title)) }
+                                        VStack(alignment: .leading) {
+                                            Text(LocalizedStringKey(task.title))
+                                            if let date = dates[task.id] { Text(date, format: .dateTime.weekday(.wide).day().month()).font(.subheadline).foregroundStyle(.secondary) }
+                                        }
                                     }
                                 }
                             }
@@ -116,8 +125,9 @@ struct RoutineComposer: View {
                         ProgressView(value: Double(pageIndex + 1), total: Double(pages.count))
                         if page == .review {
                             PrimaryButton(title: mode == .edit ? "Save changes" : "Create my routine") {
+                                confirmedDates = plannedDates
                                 stage = 0
-                            }.disabled(chosen.isEmpty && mode != .edit)
+                            }.disabled((chosen.isEmpty && mode != .edit) || (!chosen.isEmpty && workdays & 254 == 254))
                         } else {
                             PrimaryButton(title: "Continue") { pageIndex += 1 }
                         }
@@ -174,9 +184,9 @@ struct RoutineComposer: View {
             Button { binding.selected.wrappedValue.toggle() } label: {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: item.taskIcon ?? guidance?.symbol ?? item.room.symbol)
-                        .font(.title2).foregroundStyle(Theme.ink)
+                        .font(.title2).foregroundStyle(Theme.brown)
                         .frame(width: 48, height: 48)
-                        .background(Theme.mint, in: RoundedRectangle(cornerRadius: 15))
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 15))
                     VStack(alignment: .leading, spacing: 6) {
                         Text(LocalizedStringKey(item.title)).font(.title3.bold())
                         if let notes = item.taskNotes, !notes.isEmpty {
@@ -197,7 +207,7 @@ struct RoutineComposer: View {
                     .padding(.horizontal, 16).padding(.bottom, 12)
             }
         }
-        .background(item.selected ? Theme.mint : Theme.paper, in: RoundedRectangle(cornerRadius: 20))
+        .background(item.selected ? Theme.surface : Theme.paper, in: RoundedRectangle(cornerRadius: 20))
         .overlay { RoundedRectangle(cornerRadius: 20).stroke(Theme.leaf.opacity(item.selected ? 0.8 : 0.25)).allowsHitTesting(false) }
         .listRowSeparator(.hidden).listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 5, leading: 0, bottom: 5, trailing: 0))
@@ -223,10 +233,23 @@ struct RoutineComposer: View {
             [Page.floor(level)] + rooms(on: level).filter { !excludedRooms.contains($0) }.map(Page.room)
         } + [.review]
     }
+    private var plannedDates: [UUID: Date] {
+        let moving = Set((mode == .edit ? draft : chosen).compactMap { $0.existing?.persistentModelID })
+        var occupied: [Date: Int] = [:]
+        for item in history where !moving.contains(item.persistentModelID) {
+            occupied[Calendar.current.startOfDay(for: item.scheduled), default: 0] += item.minutes
+        }
+        let dates = RoutineSchedule.dates(minutes: chosen.map(\.minutes), workdays: workdays, budget: budget, occupied: occupied)
+        return Dictionary(uniqueKeysWithValues: zip(chosen.map(\.id), dates))
+    }
     private func prepare() {
         let now = Date.now
-        let pending = history.filter { $0.completed == nil && ($0.scheduled <= now || Calendar.current.isDateInToday($0.scheduled)) }
+        let pending = history.filter { $0.completed == nil }
         if mode == .edit {
+            let saved = UserDefaults.standard.stringArray(forKey: selectionKey) ?? []
+            // The editor covers all pending tasks, including ones added from Today.
+            let included = Set(saved + pending.map(\.roomName))
+            excludedRooms = Set(rhythm.rooms.filter { !included.contains($0.rawValue) })
             draft = pending.compactMap { item in
                 guard let room = Room(rawValue: item.roomName) else { return nil }
                 return DraftTask(room: room, title: item.title, minutes: item.minutes, existing: item, taskIcon: item.taskIcon, taskNotes: item.taskNotes, selected: true)
@@ -257,54 +280,60 @@ struct RoutineComposer: View {
                 Text(finished ? "Your routine is ready" : "Preparing your routine").font(.title.bold())
             }
             ProgressView(value: Double(current), total: Double(phases.count)).tint(Theme.leaf)
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(phases.indices, id: \.self) { index in
-                        HStack(alignment: .top, spacing: 12) {
-                            VStack(spacing: 4) {
-                                if current == index { ProgressView().tint(Theme.leaf).frame(width: 26, height: 26) }
-                                else {
-                                    Image(systemName: current > index ? "checkmark.circle.fill" : "circle")
-                                        .font(.title2).foregroundStyle(Theme.leaf).frame(width: 26, height: 26)
-                                }
-                                if index < phases.count - 1 {
-                                    Rectangle().fill(Theme.leaf.opacity(0.35)).frame(width: 2)
-                                }
-                            }
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(phases[index]).font(.headline)
-                                switch index {
-                                case 0: Text("\(chosen.count) tasks · \(total) min")
-                                case 1:
-                                    ForEach(levels, id: \.self) { level in
-                                        Text("Floor \(level)") + Text(" · ") + Text(verbatim: rooms(on: level).filter { groups[$0] != nil }.map(\.displayName).joined(separator: ", "))
+            ScrollViewReader { scroll in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(phases.indices, id: \.self) { index in
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(spacing: 4) {
+                                    if current == index { ProgressView().tint(Theme.leaf).frame(width: 26, height: 26) }
+                                    else {
+                                        Image(systemName: current > index ? "checkmark.circle.fill" : "circle")
+                                            .font(.title2).foregroundStyle(Theme.leaf).frame(width: 26, height: 26)
                                     }
-                                case 2:
-                                    ForEach(levels, id: \.self) { level in
-                                        ForEach(rooms(on: level)) { room in
-                                            if let tasks = groups[room] {
-                                                VStack(alignment: .leading, spacing: 5) {
-                                                    Label(rhythm.label(room), systemImage: room.symbol).font(.subheadline.bold())
-                                                    ForEach(tasks) { task in
-                                                        HStack {
-                                                            Text(LocalizedStringKey(task.title))
-                                                            Spacer()
-                                                            Text("\(task.minutes) min").monospacedDigit()
+                                    if index < phases.count - 1 {
+                                        Rectangle().fill(Theme.leaf.opacity(0.35)).frame(width: 2)
+                                    }
+                                }
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(phases[index]).font(.headline)
+                                    switch index {
+                                    case 0: Text("\(chosen.count) tasks · \(total) min")
+                                    case 1:
+                                        ForEach(levels, id: \.self) { level in
+                                            Text("Floor \(level)") + Text(" · ") + Text(verbatim: rooms(on: level).filter { groups[$0] != nil }.map(\.displayName).joined(separator: ", "))
+                                        }
+                                    case 2:
+                                        ForEach(levels, id: \.self) { level in
+                                            ForEach(rooms(on: level)) { room in
+                                                if let tasks = groups[room] {
+                                                    VStack(alignment: .leading, spacing: 5) {
+                                                        Label(rhythm.label(room), systemImage: room.symbol).font(.subheadline.bold())
+                                                        ForEach(tasks) { task in
+                                                            HStack {
+                                                                Text(LocalizedStringKey(task.title))
+                                                                Spacer()
+                                                                Text("\(task.minutes) min").monospacedDigit()
+                                                            }
                                                         }
-                                                    }
-                                                }.padding(12).background(Theme.mint, in: RoundedRectangle(cornerRadius: 14))
+                                                    }.padding(12).background(Theme.surface, in: RoundedRectangle(cornerRadius: 14))
+                                                }
                                             }
                                         }
+                                    case 3: Text("\(total) minutes")
+                                    case 4: Text("Planned: \(total) min · Target: \(budget) min")
+                                    default: Text(finished ? "Routine saved" : "On this device")
                                     }
-                                case 3: Text("\(total) minutes")
-                                case 4: Text("Planned: \(total) min · Target: \(budget) min")
-                                default: Text(finished ? "Routine saved" : "On this device")
-                                }
-                            }.font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.bottom, 22)
-                        }.opacity(index > current ? 0.65 : 1)
+                                }.font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.bottom, 22)
+                            }.opacity(index > current ? 0.65 : 1).id(index)
+                        }
+                    }.padding(.vertical, 12)
+                }.onChange(of: current) { _, next in
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.45)) {
+                        scroll.scrollTo(min(next, phases.count - 1), anchor: .top)
                     }
-                }.padding(.vertical, 12)
+                }
             }
             if finished { PrimaryButton(title: "View my tasks") { dismiss() } }
         }.padding(20).background(Theme.paper).foregroundStyle(Theme.ink)
@@ -321,16 +350,20 @@ struct RoutineComposer: View {
         }
         for item in draft {
             if item.selected && !excludedRooms.contains(item.room) {
+                guard let date = confirmedDates[item.id] else { context.rollback(); stage = nil; failed = true; return }
                 if let existing = item.existing {
+                    existing.scheduled = date
                     existing.minutes = item.minutes
                     existing.taskIcon = item.taskIcon
                     existing.taskNotes = item.taskNotes
                 }
-                else { context.insert(Reset(item.title, room: item.room, minutes: item.minutes, taskIcon: item.taskIcon, taskNotes: item.taskNotes)) }
+                else { context.insert(Reset(item.title, room: item.room, minutes: item.minutes, scheduled: date, taskIcon: item.taskIcon, taskNotes: item.taskNotes)) }
             } else if mode == .edit, let existing = item.existing { context.delete(existing) }
         }
         do {
             try context.save()
+            let included = orderedRooms.filter { !excludedRooms.contains($0) }.map(\.rawValue)
+            UserDefaults.standard.set(included, forKey: selectionKey)
             stage = phases.count
         } catch { context.rollback(); stage = nil; failed = true }
     }

@@ -19,9 +19,9 @@ struct NewRoomSheet: View {
                 VStack(alignment: .leading, spacing: 20) {
                     HStack(spacing: 14) {
                         Image(systemName: symbol).font(.title2).frame(width: 52, height: 52)
-                            .background(Theme.mint, in: RoundedRectangle(cornerRadius: 15))
+                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 15))
                         TextField("New room name", text: $name).textInputAutocapitalization(.words)
-                    }.padding(14).background(Theme.mint, in: RoundedRectangle(cornerRadius: 20))
+                    }.padding(14).background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
                     if duplicate { Text("This name is already used on this level.").font(.footnote) }
                     Text("Choose an icon").font(.headline)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 49))], spacing: 10) {
@@ -29,7 +29,7 @@ struct NewRoomSheet: View {
                             Button { symbol = icon } label: {
                                 Image(systemName: icon).font(.title2).frame(maxWidth: .infinity, minHeight: 50)
                                     .foregroundStyle(symbol == icon ? Theme.ivory : Theme.ink)
-                                    .background(symbol == icon ? Theme.pine : Theme.mint, in: RoundedRectangle(cornerRadius: 14))
+                                    .background(symbol == icon ? Theme.pine : Theme.surface, in: RoundedRectangle(cornerRadius: 14))
                             }.buttonStyle(.plain).accessibilityLabel(LocalizedStringKey(label))
                                 .accessibilityAddTraits(symbol == icon ? .isSelected : [])
                         }

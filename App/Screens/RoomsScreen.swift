@@ -34,7 +34,7 @@ struct RoomsScreen: View {
                             Text("\(items.filter { $0.completed == nil }.count) remaining").font(.subheadline)
                             if rhythm.floors > 1 { Text("Floor \(rhythm.floor(room))").font(.caption) }
                         }.padding(18).frame(maxWidth: .infinity, minHeight: 135, alignment: .leading)
-                            .background(Theme.mint, in: RoundedRectangle(cornerRadius: 20))
+                            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
                     }.buttonStyle(.plain)
                 }
                 }

@@ -40,7 +40,12 @@
           "familyShareable": false,
           "groupNumber": 1,
           "internalID": "7d2bc092-7ee6-424c-92af-94e7bd725e8a",
-          "introductoryOffer": null,
+          "introductoryOffer": {
+            "internalID": "53d04e81-0180-4a29-80ba-fcd5f7db8aef",
+            "numberOfPeriods": 1,
+            "paymentMode": "free",
+            "subscriptionPeriod": "P1W"
+          },
           "localizations": [
             {
               "description": "Ad-free routines and 30-day progress.",
@@ -66,7 +71,12 @@
           "familyShareable": false,
           "groupNumber": 1,
           "internalID": "76285502-51e4-4470-886e-81ba408c58ee",
-          "introductoryOffer": null,
+          "introductoryOffer": {
+            "internalID": "895ee3eb-063b-4ca2-860d-8982edf20fa6",
+            "numberOfPeriods": 1,
+            "paymentMode": "free",
+            "subscriptionPeriod": "P1W"
+          },
           "localizations": [
             {
               "description": "Ad-free routines and 30-day progress.",

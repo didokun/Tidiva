@@ -33,7 +33,7 @@ struct ReminderOptions: View {
                     Label("Reminder \(slot + 1)", systemImage: "bell")
                         .font(.headline)
                 }.padding(18).frame(maxWidth: .infinity, minHeight: 70)
-                    .background(Theme.mint, in: RoundedRectangle(cornerRadius: 20))
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
             }
             if duplicate { Text("Choose different times for your reminders.").font(.footnote) }
             if denied {

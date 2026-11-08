@@ -37,7 +37,7 @@ struct HomeRhythm: DynamicProperty {
         return goals[(day - 1) % goals.count]
     }
     @AppStorage("tidiva.work") var work = "Office"
-    @AppStorage("tidiva.remoteDays") var remoteDays = 0
+    private var schedule = WorkSchedule()
     @AppStorage("tidiva.floors") var floors = 1
     @AppStorage("tidiva.roomLevels") var levels = ""
     @AppStorage("tidiva.rooms") var roomList = "Kitchen,Living room,Bedroom,Entryway"
@@ -78,7 +78,7 @@ struct HomeRhythm: DynamicProperty {
         let day = Calendar.current.component(.weekday, from: date)
         if focus(on: date) == "Be ready for guests" { return .guests }
         if day == 1 { return .sunday }
-        if work == "Remote" || (work == "Hybrid" && remoteDays & (1 << day) != 0) { return .pause }
+        if work == "Remote" || (work == "Hybrid" && RoutineSchedule.officeWeek & (1 << day) != 0 && schedule.officeDays & (1 << day) == 0) { return .pause }
         return .arrival
     }
 }

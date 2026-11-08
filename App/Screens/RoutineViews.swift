@@ -12,10 +12,10 @@ extension Routine {
     }
     var surface: Color {
         switch self {
-        case .arrival: Theme.mint
-        case .pause: Theme.mint
-        case .guests: Theme.mint
-        case .sunday: Theme.mint
+        case .arrival: Theme.surface
+        case .pause: Theme.surface
+        case .guests: Theme.surface
+        case .sunday: Theme.surface
         }
     }
 }
@@ -78,7 +78,7 @@ struct RoutineDetail: View {
                     Label(rhythm.favorite == routine.rawValue ? "Remove favorite" : "Make my favorite", systemImage: rhythm.favorite == routine.rawValue ? "heart.fill" : "heart")
                 }
             }.padding([.horizontal,.bottom], 18)
-        }.background(Theme.mint)
+        }.background(Theme.surface)
             .clipShape(RoundedRectangle(cornerRadius: 20))
             .sheet(item: $session) { SessionScreen(items: $0.items) }
             .alert("Couldn’t start this routine", isPresented: $failed) { Button("OK") {} }

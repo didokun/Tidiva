@@ -20,7 +20,7 @@ struct TaskFields: View {
                     Button { icon = choice.symbol } label: {
                         Image(systemName: choice.symbol).font(.title3)
                             .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(icon == choice.symbol ? Theme.mint : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+                            .background(icon == choice.symbol ? Theme.surface : Color.clear, in: RoundedRectangle(cornerRadius: 10))
                             .overlay { if icon == choice.symbol { RoundedRectangle(cornerRadius: 10).stroke(Theme.leaf) } }
                     }.buttonStyle(.plain).accessibilityLabel(Text(choice.label))
                         .accessibilityAddTraits(icon == choice.symbol ? .isSelected : [])

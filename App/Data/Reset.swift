@@ -99,6 +99,7 @@ struct Room: Hashable, Identifiable {
         return room.displayName
     }
     var minutes = 5
+    var calendarKey: UUID?
     var scheduled = Date.now
     var skippedCount = 0
     var sundayOnly = false

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
+<key>NSCalendarsFullAccessUsageDescription</key><string>Tidiva uses calendar access to create and update your scheduled tasks in Apple Calendar.</string>
 <key>GADApplicationIdentifier</key><string>$(TIDIVA_ADMOB_APP_ID)</string>
-<key>TidivaBannerID</key><string>$(TIDIVA_ADMOB_BANNER_ID)</string>
+<key>TidivaInterstitialID</key><string>$(TIDIVA_ADMOB_INTERSTITIAL_ID)</string>
 <key>GADDelayAppMeasurementInit</key><true/>
 </dict></plist>

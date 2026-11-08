@@ -38,6 +38,7 @@ struct Dashboard: View {
                 TabView(selection: $tab) {
                     NavigationStack { TodayScreen().toolbar { settingsButton } }
                         .tabItem { Label("Today", systemImage: "sun.max") }.tag(0)
+                    NavigationStack { TaskCalendarScreen() }.tabItem { Label("Calendar", systemImage: "calendar") }.tag(4)
                     RoomsScreen().tabItem { Label("My Home", systemImage: "house") }.tag(1)
                     NavigationStack { PlannerScreen() }.tabItem { Label("Routines", systemImage: "books.vertical") }.tag(2)
                     NavigationStack { ProgressScreen() }.tabItem { Label("Progress", systemImage: "chart.bar") }.tag(3)

@@ -16,7 +16,7 @@ private enum SetupStep: Hashable {
         case .floors: "How many levels does your home have?"
         case .level(let level): String(localized: "Which rooms are on level \(level)?")
         case .work: "Where do you usually work?"
-        case .days: "Which days do you work at home?"
+        case .days: "Which days do you work at the office?"
         case .workspace: "Where do you work at home?"
         case .priority: "Which room comes first?"
         case .profile: "Your profile"
@@ -37,6 +37,7 @@ struct OnboardingScreen: View {
     @State private var floorCount = 1
     @ObservedObject private var membership = Membership.shared
     private var rhythm = HomeRhythm()
+    private var schedule = WorkSchedule()
     let editRooms: Bool
     let finish: () -> Void
     init(editRooms: Bool = false, finish: @escaping () -> Void) {
@@ -107,35 +108,35 @@ struct OnboardingScreen: View {
         switch step {
         case .welcome:
             Text("Tidiva picks small cleaning tasks for your rooms, your schedule and the time you have. Choose a routine and follow it one task at a time.").foregroundStyle(.secondary)
-        case .cleaning: wheel("Cleaning sessions per week", "sparkles", Theme.mint, Array(0...21), rhythm.$sessions)
-        case .laundry: wheel("Laundry loads per week", "washer.fill", Theme.mint, Array(0...30), rhythm.$loads)
+        case .cleaning: wheel("Cleaning sessions per week", "sparkles", Theme.surface, Array(0...21), rhythm.$sessions)
+        case .laundry: wheel("Laundry loads per week", "washer.fill", Theme.surface, Array(0...30), rhythm.$loads)
         case .goal:
             Text("Select one or more priorities.").foregroundStyle(.secondary)
-            goalCard("Keep things tidy", "Give everyday clutter a place to go.", "sparkles", Theme.mint)
-            goalCard("Stay on top of laundry", "Make time to gather, fold and put clothes away.", "washer.fill", Theme.mint)
-            goalCard("Be ready for guests", "Focus on the rooms your guests will see.", "person.2.fill", Theme.mint)
-            goalCard("Keep the kitchen ready", "Clear the counters and put clean dishes away.", "fork.knife", Theme.mint)
-            goalCard("Freshen up the bathroom", "Give the sink and towels regular attention.", "shower.fill", Theme.mint)
-            goalCard("Wind down in a tidy bedroom", "Make the bed and clear your nightstand.", "bed.double.fill", Theme.mint)
-        case .minutes: wheel("Minutes per routine", "timer", Theme.mint, PlanningRules.sessionMinutes, $dailyMinutes)
+            goalCard("Keep things tidy", "Give everyday clutter a place to go.", "sparkles", Theme.surface)
+            goalCard("Stay on top of laundry", "Make time to gather, fold and put clothes away.", "washer.fill", Theme.surface)
+            goalCard("Be ready for guests", "Focus on the rooms your guests will see.", "person.2.fill", Theme.surface)
+            goalCard("Keep the kitchen ready", "Clear the counters and put clean dishes away.", "fork.knife", Theme.surface)
+            goalCard("Freshen up the bathroom", "Give the sink and towels regular attention.", "shower.fill", Theme.surface)
+            goalCard("Wind down in a tidy bedroom", "Make the bed and clear your nightstand.", "bed.double.fill", Theme.surface)
+        case .minutes: wheel("Minutes per routine", "timer", Theme.surface, PlanningRules.sessionMinutes, $dailyMinutes)
         case .home:
-            choice("Apartment", "A home in a shared building.", "building.2.fill", Theme.mint, $homeType)
-            choice("House", "An individual or attached house.", "house.fill", Theme.mint, $homeType)
-            choice("Studio", "Living and sleeping in one space.", "bed.double.fill", Theme.mint, $homeType)
-            choice("Other", "A different kind of living space.", "house.and.flag.fill", Theme.mint, $homeType)
+            choice("Apartment", "A home in a shared building.", "building.2.fill", Theme.surface, $homeType)
+            choice("House", "An individual or attached house.", "house.fill", Theme.surface, $homeType)
+            choice("Studio", "Living and sleeping in one space.", "bed.double.fill", Theme.surface, $homeType)
+            choice("Other", "A different kind of living space.", "house.and.flag.fill", Theme.surface, $homeType)
         case .priority, .workspace:
             ForEach(rooms) { room in
                 let active = (step == .priority ? rhythm.priority : rhythm.workspace) == room.rawValue
-                card(room.displayName, floorCount > 1 ? String(localized: "Floor \(rhythm.floor(room))") : "", room.symbol, Theme.mint, active) {
+                card(room.displayName, floorCount > 1 ? String(localized: "Floor \(rhythm.floor(room))") : "", room.symbol, Theme.surface, active) {
                     if step == .priority { rhythm.priority = room.rawValue } else { rhythm.workspace = room.rawValue }
                 }
             }
-        case .floors: wheel("Number of levels", "square.3.layers.3d", Theme.mint, Array(1...8), $floorCount)
+        case .floors: wheel("Number of levels", "square.3.layers.3d", Theme.surface, Array(1...8), $floorCount)
         case .level(let level):
             let onLevel = selected.filter { rhythm.floor($0) == level }
             ForEach(Room.allCases) { template in
                 let chosen = onLevel.first { $0.kind == template.kind }
-                card(template.displayName, "", template.symbol, Theme.mint, chosen != nil, multiple: true) {
+                card(template.displayName, "", template.symbol, Theme.surface, chosen != nil, multiple: true) {
                     if let chosen { selected.removeAll { $0 == chosen } }
                     else {
                         // Keep the original key when reselecting a previously saved room.
@@ -145,7 +146,7 @@ struct OnboardingScreen: View {
                 }
             }
             ForEach(onLevel.filter(\.custom)) { room in
-                card(room.name, "", room.symbol, Theme.mint, true, multiple: true) { selected.removeAll { $0 == room } }
+                card(room.name, "", room.symbol, Theme.surface, true, multiple: true) { selected.removeAll { $0 == room } }
             }
             Button { addingRoom = true } label: {
                 Label("Add a room", systemImage: "plus.circle.fill")
@@ -160,11 +161,11 @@ struct OnboardingScreen: View {
             }
         case .work:
             ForEach(["Office","Remote","Hybrid","Variable"], id: \.self) { value in
-                choice(value, "", "briefcase.fill", Theme.mint, rhythm.$work)
+                choice(value, "", "briefcase.fill", Theme.surface, Binding(get: { schedule.profile }, set: { schedule.profile = $0 }))
             }
         case .days:
             ForEach(1...7, id: \.self) { day in
-                card(Calendar.current.weekdaySymbols[day - 1], "", "calendar", Theme.mint, rhythm.remoteDays & (1 << day) != 0) { rhythm.remoteDays ^= 1 << day }
+                card(Calendar.current.weekdaySymbols[day - 1], "", "calendar", Theme.surface, schedule.officeDays & (1 << day) != 0) { schedule.officeDays ^= 1 << day }
             }
         case .profile: ProfileFields()
         case .reminders: ReminderOptions()

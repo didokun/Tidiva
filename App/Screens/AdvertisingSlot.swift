@@ -19,7 +19,8 @@ import UserMessagingPlatform
                 _ = await MobileAds.shared.start()
                 ready = true
             }
-        } catch { preparing = false }
+        } catch { ready = false }
+        preparing = false
     }
 }
 
@@ -40,29 +41,24 @@ struct AdvertisingPrivacyOptions: View {
     }
 }
 
-struct AdvertisingSlot: View {
-    @ObservedObject private var membership = Membership.shared
-    @ObservedObject private var consent = AdConsent.shared
-    @AppStorage("tidiva.profile.age") private var age = 0
-    var body: some View {
-        if membership.premium == false, age == 0 || age >= 18,
-           let unit = Bundle.main.object(forInfoDictionaryKey: "TidivaBannerID") as? String, !unit.isEmpty {
-            VStack {
-                if consent.ready {
-                    Banner(unit: unit).frame(width: 320, height: 50)
-                }
-            }.frame(maxWidth: .infinity).task { await consent.prepare() }
-        }
+@MainActor final class SessionAdvertising: ObservableObject {
+    private var ad: InterstitialAd?
+    private var eligible: Bool {
+        let age = UserDefaults.standard.integer(forKey: "tidiva.profile.age")
+        return Membership.shared.premium == false && (age == 0 || age >= 18)
     }
 
-    private struct Banner: UIViewRepresentable {
-        let unit: String
-        func makeUIView(context: Context) -> BannerView {
-            let view = BannerView(adSize: AdSizeBanner)
-            view.adUnitID = unit
-            view.load(Request())
-            return view
-        }
-        func updateUIView(_ view: BannerView, context: Context) {}
+    func preload() async {
+        guard eligible, let unit = Bundle.main.object(forInfoDictionaryKey: "TidivaInterstitialID") as? String,
+              !unit.isEmpty else { return }
+        await AdConsent.shared.prepare()
+        guard AdConsent.shared.ready, eligible else { return }
+        ad = try? await InterstitialAd.load(with: unit, request: Request())
+    }
+
+    func showAtCompletion() {
+        guard eligible, ConsentInformation.shared.canRequestAds, let loaded = ad else { return }
+        ad = nil
+        loaded.present(from: nil)
     }
 }

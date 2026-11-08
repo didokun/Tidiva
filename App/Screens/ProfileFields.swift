@@ -21,7 +21,7 @@ struct ProfileFields: View {
                     Text("Prefer not to say").tag(0)
                     ForEach(1...120, id: \.self) { Text($0, format: .number).tag($0) }
                 }.labelsHidden()
-            }.padding(18).background(Theme.mint, in: RoundedRectangle(cornerRadius: 20))
+            }.padding(18).background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
             if !email.isEmpty {
                 Label(email, systemImage: "envelope").font(.subheadline)
             }

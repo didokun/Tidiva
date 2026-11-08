@@ -20,7 +20,7 @@ struct ResetRow: View {
                     Text(item.roomLabel).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
-                Text("\(item.minutes)m").font(.caption.bold()).padding(7).background(Theme.mint, in: Capsule())
+                Text("\(item.minutes)m").font(.caption.bold()).padding(7).background(Theme.surface, in: Capsule())
             }.padding(13).background(Theme.paper, in: RoundedRectangle(cornerRadius: 18))
         }.buttonStyle(.plain).accessibilityValue(item.completed == nil ? "Incomplete" : "Completed")
         .alert("Couldn’t save this change", isPresented: $failed) { Button("OK") {} }
@@ -37,7 +37,6 @@ struct TodayScreen: View {
         TimelineView(.periodic(from: .now, by: 60)) { clock in
             let today = resets.filter {
                 Calendar.current.isDate($0.scheduled, inSameDayAs: clock.date) ||
-                ($0.scheduled <= clock.date && $0.completed == nil) ||
                 ($0.completed.map { Calendar.current.isDate($0, inSameDayAs: clock.date) } ?? false)
             }
             let pending = today.filter { $0.completed == nil }
@@ -48,7 +47,7 @@ struct TodayScreen: View {
             let greeting = hour < 5 || hour >= 18 ? "Good evening!" : hour < 12 ? "Good morning!" : "Good afternoon!"
 
             Page(title: greeting + " 👋") {
-                if today.isEmpty {
+                if resets.isEmpty {
                     VStack(alignment: .leading, spacing: 14) {
                         Image("TidivaMark").resizable().frame(width: 52, height: 52).clipShape(RoundedRectangle(cornerRadius: 12))
                         Text("Build your routine").font(.title.bold())
@@ -79,22 +78,26 @@ struct TodayScreen: View {
                     HStack {
                         Text("Today’s focus").font(.title3.bold())
                         Spacer()
+                        if resets.contains(where: { $0.completed == nil }) {
+                            Button { composer = .edit } label: {
+                                Image(systemName: "square.and.pencil").font(.title3)
+                                    .frame(width: 44, height: 44)
+                            }.accessibilityLabel("Edit my routine")
+                        }
                         Button { adding = true } label: {
                             Label("New", systemImage: "plus").font(.subheadline.bold()).padding(10)
                                 .foregroundStyle(Theme.ivory).background(Theme.pine, in: Capsule())
                         }
                     }
+                    if today.isEmpty { Text("No tasks scheduled today.").foregroundStyle(.secondary) }
                     ForEach(today) { ResetRow(item: $0) }
                     if !pending.isEmpty {
                         Button("Start my task list") { sessionItems = pending; session = true }.font(.subheadline.bold())
                     }
-                }.padding(14).background(Theme.mint, in: RoundedRectangle(cornerRadius: 22))
-                if !pending.isEmpty {
-                    Button("Edit my routine") { composer = .edit }
-                }
+                }.padding(14).background(Theme.surface, in: RoundedRectangle(cornerRadius: 22))
+                NavigationLink { TaskCalendarScreen() } label: { Label("Task calendar", systemImage: "calendar") }
                 PrimaryButton(title: "Create my routine", symbol: "plus") { composer = .custom }
                 }
-                AdvertisingSlot()
             }
         }.sheet(isPresented: $adding) { AddTaskScreen() }
             .sheet(item: $composer) { RoutineComposer(mode: $0) }
@@ -107,6 +110,7 @@ struct TodayScreen: View {
 struct AddTaskScreen: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @State private var scheduledDay = Date.now
     @State private var title = ""
     @State private var icon = "sparkles"
     @State private var notes = ""
@@ -120,6 +124,7 @@ struct AddTaskScreen: View {
                 Section("Task") {
                     TaskFields(title: $title, icon: $icon, notes: $notes)
                     Picker("Room", selection: $room) { ForEach(roomProfile.rooms) { Text(roomProfile.label($0)).tag($0) } }.onAppear { if !roomProfile.rooms.contains(room), let first = roomProfile.rooms.first { room = first } }
+                    DatePicker("Scheduled day", selection: $scheduledDay, displayedComponents: .date)
                     Stepper("\(minutes) minutes", value: $minutes, in: 1...60)
                 }
             }.navigationTitle("Add a task")
@@ -127,7 +132,7 @@ struct AddTaskScreen: View {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Add") {
-                            context.insert(Reset(title.trimmingCharacters(in: .whitespacesAndNewlines), room: room, minutes: minutes, taskIcon: icon, taskNotes: notes.trimmingCharacters(in: .whitespacesAndNewlines)))
+                            context.insert(Reset(title.trimmingCharacters(in: .whitespacesAndNewlines), room: room, minutes: minutes, scheduled: Calendar.current.startOfDay(for: scheduledDay), taskIcon: icon, taskNotes: notes.trimmingCharacters(in: .whitespacesAndNewlines)))
                             do { try context.save(); dismiss() } catch { context.rollback(); failed = true }
                         }.disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
@@ -141,6 +146,9 @@ struct SessionScreen: View {
     @Environment(\.modelContext) private var context
     let items: [Reset]
     @State private var index = 0
+    @StateObject private var advertising = SessionAdvertising()
+    @ObservedObject private var membership = Membership.shared
+    @State private var showPremium = false
     @State private var finished = 0
     @State private var suggestSunday = false
     @State private var failed = false
@@ -178,10 +186,18 @@ struct SessionScreen: View {
                 } else {
                     Image(systemName: "checkmark.seal").font(.system(size: 72, weight: .light)).foregroundStyle(Theme.leaf).padding(.vertical, 24)
                     Text(items.isEmpty ? String(localized: "No tasks fit this time window. Try a longer reset or add a shorter task.") : String(localized: "You completed \(finished) tasks. Every little bit makes home feel better.")).font(.title3)
+                    if membership.premium == false {
+                        Button("Go ad-free with Premium") { showPremium = true }
+                    }
                     PrimaryButton(title: "Back to my day", symbol: "sun.max") { dismiss() }
                 }
             }.toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
         }.tint(Theme.leaf).interactiveDismissDisabled(index < items.count)
+            .task { await advertising.preload() }
+            .onChange(of: index) { _, next in
+                if next == items.count && finished > 0 { advertising.showAtCompletion() }
+            }
+            .sheet(isPresented: $showPremium) { PremiumOptions().padding() }
             .alert("Couldn’t save your progress", isPresented: $failed) { Button("Try again", role: .cancel) {} }
     }
 }

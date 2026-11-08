@@ -26,7 +26,7 @@ struct ProgressScreen: View {
                     } else { Text("Last 7 days").font(.headline) }
                     Text("\(completed.count) resets").font(Theme.headline)
                     Text("\(completed.reduce(0) { $0 + $1.minutes }) minutes completed")
-                }.padding(24).frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Theme.leaf).background(Theme.mint,in: RoundedRectangle(cornerRadius: 24))
+                }.padding(24).frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(Theme.leaf).background(Theme.surface,in: RoundedRectangle(cornerRadius: 24))
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Daily completions").font(.headline)
                     Chart(days, id: \.self) { day in

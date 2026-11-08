@@ -8,9 +8,18 @@ profile.setFloor(.office, 2)
 profile.workspace = "Office"
 profile.priority = "Kitchen"
 profile.work = "Hybrid"
-profile.remoteDays = 1 << 2
+let schedule = WorkSchedule()
+let defaults = UserDefaults.standard
+let officeDays = (1 << 2) | (1 << 3) | (1 << 4)
+defaults.removeObject(forKey: "tidiva.hybridOfficeDays")
+defaults.set(officeDays, forKey: "tidiva.remoteDays")
+schedule.useProfile()
+precondition(schedule.officeDays == officeDays && schedule.avoided == officeDays)
+let dates = RoutineSchedule.dates(minutes: [5, 5], workdays: schedule.avoided, budget: 15, occupied: [:], start: day)
+precondition(dates.map { Calendar.current.component(.weekday, from: $0) } == [5, 6])
 profile.favorite = ""
-precondition(profile.recommendation(on: day) == .pause)
+precondition(profile.recommendation(on: day) == .arrival)
+precondition(profile.recommendation(on: dates[0]) == .pause)
 profile.favorite = "guests"
 precondition(profile.recommendation(on: day) == .guests)
 func tasks(_ routine: Routine, _ history: [Reset] = []) -> [RoutineTask] {

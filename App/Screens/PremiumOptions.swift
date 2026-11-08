@@ -5,13 +5,15 @@ import StoreKit
     static let shared = Membership()
     static let products = ["tidiva.premium.monthly", "tidiva.premium.yearly", "tidiva.premium.lifetime"]
     @Published private(set) var premium: Bool?
+    @Published private(set) var activeIDs = Set<String>()
     func refresh() async {
-        var active = false
+        var active = Set<String>()
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result, Self.products.contains(transaction.productID),
-               transaction.revocationDate == nil, !transaction.isUpgraded { active = true }
+               transaction.revocationDate == nil, !transaction.isUpgraded { active.insert(transaction.productID) }
         }
-        premium = active
+        activeIDs = active
+        premium = !active.isEmpty
     }
     func observe() async {
         for await result in Transaction.updates {
@@ -31,6 +33,9 @@ struct PremiumOptions: View {
     @State private var busy = false
     @State private var message: LocalizedStringKey?
     @State private var loaded = false
+    @State private var managing = false
+    @State private var trialIDs = Set<String>()
+    private var offersTrial: Bool { trialIDs.contains(selected) }
 
     private var product: Product? { catalog.first { $0.id == selected } }
 
@@ -40,19 +45,36 @@ struct PremiumOptions: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Tidiva Premium").font(Theme.headline)
                     VStack(alignment: .leading, spacing: 12) {
-                        perk("Ad-free Today", "sun.max")
+                        perk("Ad-free sessions", "sun.max")
                         perk("30-day activity history", "calendar")
                         perk("Activity by room", "house")
                         perk("Export activity as CSV", "square.and.arrow.up")
                     }.panel()
                     if membership.premium == true {
                         Label("Premium is active", systemImage: "checkmark.seal.fill")
+                        ForEach(membership.activeIDs.sorted(), id: \.self) { id in
+                            LabeledContent("Current plan") {
+                                Text(planTitle(id))
+                            }
+                        }
+                        if membership.activeIDs.contains(where: { !$0.hasSuffix("lifetime") }) {
+                            Button { managing = true } label: {
+                                Label("Change or cancel subscription", systemImage: "slider.horizontal.3")
+                            }.buttonStyle(.borderedProminent)
+                        }
                     } else {
                         ForEach(Membership.products, id: \.self) { id in
                             planRow(id)
                         }
                         if loaded && catalog.count < Membership.products.count {
+                            #if DEBUG
+                            Text("For test purchases, run Tidiva from Xcode with Tidiva.storekit selected in the scheme’s Run options.").font(.footnote)
+                            #endif
                             Button("Reload prices") { Task { await load() } }
+                        }
+                        if offersTrial, let product {
+                            Text(selected.hasSuffix("monthly") ? "7 days free, then \(product.displayPrice) per month." : "7 days free, then \(product.displayPrice) per year.")
+                                .font(.headline)
                         }
                         Text(selected.hasSuffix("lifetime") ? "One payment for lifetime access." : "Renews automatically until canceled.")
                             .font(.footnote).foregroundStyle(.secondary)
@@ -63,7 +85,7 @@ struct PremiumOptions: View {
             }
             VStack(spacing: 3) {
                 if membership.premium != true {
-                    PrimaryButton(title: selected.hasSuffix("lifetime") ? "Get lifetime access" : "Subscribe to Premium", symbol: "arrow.right") {
+                    PrimaryButton(title: selected.hasSuffix("lifetime") ? "Get lifetime access" : offersTrial ? "Start my 7-day free trial" : "Subscribe to Premium", symbol: "arrow.right") {
                         Task { await buy() }
                     }.disabled(product == nil || busy).opacity(product == nil || busy ? 0.6 : 1)
                 }
@@ -74,16 +96,26 @@ struct PremiumOptions: View {
             }.padding(.vertical, 6)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { await load() }
+        .manageSubscriptionsSheet(isPresented: $managing)
+        .onChange(of: managing) { _, open in
+            if !open { Task { await membership.refresh(); await load() } }
+        }
     }
 
     private func perk(_ title: LocalizedStringKey, _ icon: String) -> some View {
         Label(title, systemImage: icon).font(.subheadline.weight(.semibold))
     }
 
+    private func planTitle(_ id: String) -> LocalizedStringKey {
+        if id.hasSuffix("monthly") { return "Monthly" }
+        if id.hasSuffix("yearly") { return "Annual" }
+        return "Lifetime"
+    }
+
     private func planRow(_ id: String) -> some View {
         let item = catalog.first { $0.id == id }
         let monthly = id.hasSuffix("monthly")
-        let title: LocalizedStringKey = monthly ? "Monthly" : id.hasSuffix("yearly") ? "Annual" : "Lifetime"
+        let title = planTitle(id)
         return Button {
             selected = id
             message = nil
@@ -98,7 +130,7 @@ struct PremiumOptions: View {
                 if let item { Text(item.displayPrice).font(.title3.bold()) }
                 else { Text(loaded ? "Unavailable" : "Loading…").font(.caption) }
             }.padding(16).frame(maxWidth: .infinity)
-            .background(selected == id ? Theme.mint : Color.clear, in: RoundedRectangle(cornerRadius: 18))
+            .background(selected == id ? Theme.surface : Color.clear, in: RoundedRectangle(cornerRadius: 18))
             .overlay { RoundedRectangle(cornerRadius: 18).stroke(Theme.leaf.opacity(selected == id ? 1 : 0.25)) }
             .contentShape(Rectangle())
         }.buttonStyle(.plain).disabled(item == nil || busy)
@@ -110,6 +142,15 @@ struct PremiumOptions: View {
         if product == nil, let first = Membership.products.first(where: { id in catalog.contains { $0.id == id } }) {
             selected = first
         }
+        var eligible = Set<String>()
+        for item in catalog {
+            guard let subscription = item.subscription,
+                  let offer = subscription.introductoryOffer, offer.paymentMode == .freeTrial,
+                  (offer.period.unit == .week && offer.period.value == 1 || offer.period.unit == .day && offer.period.value == 7),
+                  offer.periodCount == 1, await subscription.isEligibleForIntroOffer else { continue }
+            eligible.insert(item.id)
+        }
+        trialIDs = eligible
         loaded = true
     }
 
