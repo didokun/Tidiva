@@ -54,7 +54,7 @@ struct ProgressScreen: View {
                 }
                 if completed.isEmpty { Text("Finish a task to see your first activity here.").foregroundStyle(.secondary) }
             }
-        }
+        }.browsingAdvertising()
     }
 }
 

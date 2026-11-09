@@ -26,7 +26,7 @@ struct RoomsScreen: View {
                         Page(title: room.displayName) {
                             if items.isEmpty { Text("Add a reset for this room in Routines.").panel() }
                             ForEach(items) { ResetRow(item: $0) }
-                        }
+                        }.browsingAdvertising()
                     } label: {
                         VStack(alignment: .leading, spacing: 9) {
                             Image(systemName: room.symbol).font(.title2)
@@ -39,7 +39,8 @@ struct RoomsScreen: View {
                 }
                 }
                 }
-            }.toolbar { ToolbarItem(placement: .topBarTrailing) { Button { adding = true } label: { Image(systemName: "plus") }.accessibilityLabel("Add a task") } }
+            }.browsingAdvertising()
+                .toolbar { ToolbarItem(placement: .topBarTrailing) { Button { adding = true } label: { Image(systemName: "plus") }.accessibilityLabel("Add a task") } }
         }.sheet(isPresented: $editing) { OnboardingScreen(editRooms: true) { editing = false } }
         .sheet(isPresented: $adding) { AddTaskScreen() }
     }

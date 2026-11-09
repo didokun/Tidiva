@@ -16,6 +16,7 @@ struct PlannerScreen: View {
             ForEach(Routine.allCases) { routine in
                 NavigationLink {
                     ScrollView { RoutineDetail(routine: routine, date: .now).padding() }.background(Theme.paper)
+                        .browsingAdvertising()
                 } label: {
                     VStack(alignment: .leading, spacing: 9) {
                         Image(systemName: routine.symbol).font(.title2).padding(.bottom, 8)
@@ -53,7 +54,8 @@ struct PlannerScreen: View {
                     do { try context.save(); added = true } catch { context.rollback(); failed = true }
                 }.buttonStyle(.bordered).disabled(added)
             }
-        }.onChange(of: room) { plan = nil }.onChange(of: minutes) { plan = nil }
+        }.browsingAdvertising()
+        .onChange(of: room) { plan = nil }.onChange(of: minutes) { plan = nil }
         .alert("Couldn’t save this plan", isPresented: $failed) { Button("OK") {} }
     }
 }

@@ -48,6 +48,7 @@ struct TaskCalendarScreen: View {
                 if let message { Text(message).font(.footnote) }
             } footer: { Text("Send scheduled tasks as all-day events. Sync again after changing your plan.") }
         }.navigationTitle("Task calendar")
+        .browsingAdvertising()
         .alert("Remove Tidiva events from Apple Calendar?", isPresented: $confirmingRemoval) {
             Button("Cancel", role: .cancel) {}
             Button("Remove events", role: .destructive) {

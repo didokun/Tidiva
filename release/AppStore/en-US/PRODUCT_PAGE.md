@@ -22,7 +22,7 @@ Tell Tidiva which days you spend at the office and how much time you have for cl
 See what’s next  
 Check off today’s tasks as you go or start a guided session. Browse another day in the calendar, add upcoming tasks to Apple Calendar, and remove those events from Tidiva whenever you like. Set two or three daily reminders at times that work for you.
 
-Tidiva is free to use with ads. Premium includes ad-free sessions, 30 days of activity history, progress by room, and CSV export. Choose a monthly or annual subscription, or buy lifetime access with a single payment. Eligible subscribers can try Premium free for seven days. The price and billing period appear before purchase. Subscriptions renew automatically until canceled. Manage your plan from Settings → Subscription.
+Tidiva is free to use with ads. Premium includes an ad-free experience, 30 days of activity history, progress by room, and CSV export. Choose a monthly or annual subscription, or buy lifetime access with a single payment. Eligible subscribers can try Premium free for seven days. The price and billing period appear before purchase. Subscriptions renew automatically until canceled. Manage your plan from Settings → Subscription.
 
 **Keywords**  
 housekeeping,housework,laundry,tidy,checklist,organize,home,calendar,routine,task,reminders

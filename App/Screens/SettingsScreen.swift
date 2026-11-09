@@ -54,6 +54,9 @@ struct SettingsScreen: View {
                     link("Data and privacy", "hand.raised") {
                         Form {
                             Section { Text("Your tasks are saved locally. No account is required.") }
+                            Link("Privacy policy", destination: URL(string: "https://talinha.com/tidiva/privacy/")!)
+                            Link("Terms of use", destination: URL(string: "https://talinha.com/tidiva/legal/")!)
+                            Link("Contact support", destination: URL(string: "https://talinha.com/tidiva/contact/")!)
                             AdvertisingPrivacyOptions()
                             NavigationLink("Reset Tidiva") { FactoryResetScreen(restart: restart) }
                         }

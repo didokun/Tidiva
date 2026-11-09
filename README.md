@@ -32,4 +32,4 @@ swiftc App/Services/PlanningRules.swift Tests/main.swift -o /tmp/tidiva-planning
 /tmp/tidiva-planning-tests
 ```
 
-Les rappels locaux sont facultatifs. Premium retire la publicité de fin de séance et étend le suivi à 30 jours. La configuration StoreKit de test et les identifiants AdMob de production sont détaillés dans Docs/SETUP.md.
+Les rappels locaux sont facultatifs. La version gratuite prévoit des bannières sur les écrans de consultation et une publicité de fin de séance. Premium retire toutes les publicités et étend le suivi à 30 jours. La configuration StoreKit de test et les identifiants AdMob de production sont détaillés dans Docs/SETUP.md.

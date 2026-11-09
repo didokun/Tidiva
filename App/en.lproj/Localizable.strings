@@ -364,7 +364,16 @@
 "Allow calendar access in iPhone Settings to remove events." = "Allow calendar access in iPhone Settings to remove events.";
 "Tidiva events removed from Apple Calendar." = "Tidiva events removed from Apple Calendar.";
 "Couldn’t remove all events. Try again." = "Couldn’t remove all events. Try again.";
-"Ad-free sessions" = "Ad-free sessions";
+"Ad-free experience" = "Ad-free experience";
+"Advertisement" = "Advertisement";
+"Purchase support details" = "Purchase support details";
+"The App Store returned no Premium offers. You can continue for free and try again later." = "The App Store returned no Premium offers. You can continue for free and try again later.";
+"Some Premium offers are currently unavailable. You can choose an available offer or retry later." = "Some Premium offers are currently unavailable. You can choose an available offer or retry later.";
+"Couldn’t load prices from the App Store. Check your connection and try again." = "Couldn’t load prices from the App Store. Check your connection and try again.";
+"Privacy policy" = "Privacy policy";
+"Terms of use" = "Terms of use";
+"Contact support" = "Contact support";
+"Apple Standard EULA" = "Apple Standard EULA";
 "Go ad-free with Premium" = "Go ad-free with Premium";
 "For test purchases, run Tidiva from Xcode with Tidiva.storekit selected in the scheme’s Run options." = "For test purchases, run Tidiva from Xcode with Tidiva.storekit selected in the scheme’s Run options.";
 "Current plan" = "Current plan";

@@ -12,7 +12,7 @@ Guide pour la version iPhone 1.0, préparé le 8 novembre 2026. Pars de l’éta
 | TestFlight, sur ton iPhone | Installer la version traitée par Apple et vérifier ce qu’un utilisateur recevra. |
 | Google AdMob | Créer l’emplacement publicitaire, configurer le consentement et suivre la diffusion des annonces. |
 
-**Point de départ du projet.** L’icône, le parcours initial, les routines, la planification, les rappels, le calendrier, l’achat Premium et la restauration sont présents. La compilation simulateur a réussi. Le projet utilise encore le bundle ID `com.example.tidiva`, un identifiant d’app publicitaire de démonstration et un identifiant d’interstitiel Release vide. Les offres dans [Tidiva.storekit](../Tidiva.storekit) sont des offres de test. L’état de tes comptes externes, de tes contrats et de tes produits de vente reste à vérifier dans leurs consoles.
+**Point de départ du projet.** L’icône, le parcours initial, les routines, la planification, les rappels, le calendrier, l’achat Premium et la restauration sont présents. La compilation simulateur a réussi. Le projet utilise désormais le bundle ID `com.talinha.tidiva` et les identifiants AdMob de production pour Release (application, interstitiel et bannière). Debug conserve les annonces de démonstration. Les liens de confidentialité, conditions et assistance sont présents dans l’app ; le manifeste de confidentialité déclare l’usage local de UserDefaults. La signature nécessite la connexion du titulaire dans Xcode et la vérification de son équipe payante. Les offres dans [Tidiva.storekit](../Tidiva.storekit) sont des offres de test. L’état de tes comptes externes, de tes contrats et de tes produits de vente reste à vérifier dans leurs consoles.
 
 ## 1. Obtenir le compte qui publiera l’app
 
@@ -24,7 +24,7 @@ Guide pour la version iPhone 1.0, préparé le 8 novembre 2026. Pars de l’éta
 
 ## 2. Donner à Tidiva son identité définitive
 
-1. Choisis un identifiant unique, par exemple `com.tonentreprise.tidiva`, en remplaçant le nom d’exemple par le tien. Ce **bundle ID** lie l’app installée, sa fiche et ses achats.
+1. L’identifiant retenu pour Tidiva est `com.talinha.tidiva`. Ce **bundle ID** lie l’app installée, sa fiche et ses achats.
 2. Dans **Apple Developer → Certificates, Identifiers & Profiles → Identifiers**, enregistre un **App ID** explicite pour cet identifiant et active **Sign in with Apple**. Le projet utilise cette capacité en Release. [Enregistrer un App ID](https://developer.apple.com/help/account/identifiers/register-an-app-id/)
 3. Ouvre [App.xcconfig](../App.xcconfig) et remplace la valeur de `PRODUCT_BUNDLE_IDENTIFIER`. Dans Xcode, sélectionne le projet bleu → **Targets → Tidiva → Signing & Capabilities**. Vérifie le bundle ID, l’équipe et **Automatically manage signing** pour Debug et Release.
 4. Lance Tidiva sur ton iPhone. Un nouveau bundle ID donne une installation et un stockage local distincts. Garde ton ancienne installation si tu tiens aux routines utilisées pendant le développement.
@@ -59,7 +59,7 @@ Dans la fiche Tidiva, ouvre **Monetization → Subscriptions** pour les deux abo
 
 1. Crée un groupe d’abonnements **Tidiva Premium**. Place les formules mensuelle et annuelle au même niveau de service si elles donnent les mêmes avantages. Choisis les prix disponibles et vérifie les tarifs localisés par territoire.
 2. Pour chaque abonnement, configure l’offre de lancement **Free Trial → 1 week**, les pays et la période de disponibilité. L’éligibilité se gère au niveau du groupe : passer du mensuel à l’annuel ne doit pas promettre un deuxième essai. [Configurer les essais](https://developer.apple.com/help/app-store-connect/manage-subscriptions/set-up-introductory-offers-for-auto-renewable-subscriptions/)
-3. Ajoute noms et descriptions FR/EN, disponibilités, captures de l’écran d’achat pour la review et notes de test. Dans l’app, vérifie le prix après l’essai, la périodicité, la restauration et la gestion de l’abonnement. Le code affiche un prix de référence barré de 10 USD dans certains cas : retire-le ou vérifie que tu peux justifier cette comparaison avant publication.
+3. Ajoute noms et descriptions FR/EN, disponibilités, captures de l’écran d’achat pour la review et notes de test. Dans l’app, vérifie le prix après l’essai, la périodicité, la restauration et la gestion de l’abonnement. La comparaison avec un prix barré de 10 USD a été retirée ; seuls les prix fournis par StoreKit sont affichés.
 4. Vérifie que chaque produit est prêt à être soumis. À l’étape 10, joins les premiers achats à la version 1.0. [Soumettre les achats](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase/)
 
 **Test gratuit avant l’envoi** — dans Xcode, **Product → Scheme → Edit Scheme → Run → Options → StoreKit Configuration → Tidiva.storekit**. Lance avec ⌘R, ouvre **Réglages → Abonnement**, choisis une offre et confirme. Inspecte ou supprime la transaction de test via **Debug → StoreKit → Manage Transactions**. Recommence plus tard sur TestFlight : ce deuxième test vérifie les produits configurés chez Apple. [Guide StoreKit](https://developer.apple.com/documentation/Xcode/setting-up-storekit-testing-in-xcode)
@@ -67,7 +67,7 @@ Dans la fiche Tidiva, ouvre **Monetization → Subscriptions** pour les deux abo
 ## 6. Brancher les publicités de production
 
 1. Dans AdMob, ajoute l’app iOS et crée une unité **Interstitial**. Si Tidiva est encore inédite, tu pourras relier sa fiche publique une fois disponible. Copie les deux identifiants. L’**App ID** contient un tilde `~` et l’identifiant de l’**unité publicitaire** contient une barre `/`.
-2. Dans les réglages de build de la cible Tidiva, mets tes valeurs pour **Release** : `TIDIVA_ADMOB_APP_ID` et `TIDIVA_ADMOB_INTERSTITIAL_ID`. Garde les valeurs de démonstration pour Debug. Attention : le projet partage actuellement l’App ID de démonstration via le fichier xcconfig. Vérifie les valeurs finales de chaque configuration.
+2. Dans les réglages de build de la cible Tidiva, mets tes valeurs pour **Release** : `TIDIVA_ADMOB_APP_ID` et `TIDIVA_ADMOB_INTERSTITIAL_ID`. Garde les valeurs de démonstration pour Debug. Les identifiants de production sont déjà configurés dans App.xcconfig ; Debug les remplace par les identifiants de démonstration. Vérifie les valeurs finales de chaque configuration.
 3. Configure et publie les messages nécessaires dans **Privacy & messaging**. Complète les entrées `SKAdNetworkItems` du fichier [Tidiva-Info.plist](../Tidiva-Info.plist) selon les réseaux utilisés. Pour tester sur ton téléphone avec de vrais identifiants, déclare-le comme appareil de test avant d’interagir avec une annonce. [Intégration iOS](https://developers.google.com/admob/ios/quick-start) · [Annonces de test](https://developers.google.com/admob/ios/test-ads)
 4. Sur le domaine du site développeur, publie à la racine le fichier `app-ads.txt` fourni par **ton** compte. Renseigne le site développeur dans la fiche, puis contrôle l’état de vérification dans AdMob après publication. [Guide app-ads.txt](https://developers.google.com/admob/ios/app-ads)
 

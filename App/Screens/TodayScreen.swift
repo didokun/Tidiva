@@ -99,7 +99,8 @@ struct TodayScreen: View {
                 PrimaryButton(title: "Create my routine", symbol: "plus") { composer = .custom }
                 }
             }
-        }.sheet(isPresented: $adding) { AddTaskScreen() }
+        }.browsingAdvertising()
+            .sheet(isPresented: $adding) { AddTaskScreen() }
             .sheet(item: $composer) { RoutineComposer(mode: $0) }
             .sheet(isPresented: $session) { SessionScreen(items: sessionItems) }
     }

@@ -1,5 +1,6 @@
 import SwiftUI
 import StoreKit
+import OSLog
 
 @MainActor final class Membership: ObservableObject {
     static let shared = Membership()
@@ -33,6 +34,10 @@ struct PremiumOptions: View {
     @State private var busy = false
     @State private var message: LocalizedStringKey?
     @State private var loaded = false
+    @State private var loadingPrices = false
+    @State private var priceMessage: LocalizedStringKey?
+    @State private var priceDiagnostics = ""
+    private static let logger = Logger(subsystem: "com.talinha.tidiva", category: "StoreKit")
     @State private var managing = false
     @State private var trialIDs = Set<String>()
     private var offersTrial: Bool { trialIDs.contains(selected) }
@@ -45,7 +50,7 @@ struct PremiumOptions: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Tidiva Premium").font(Theme.headline)
                     VStack(alignment: .leading, spacing: 12) {
-                        perk("Ad-free sessions", "sun.max")
+                        perk("Ad-free experience", "sun.max")
                         perk("30-day activity history", "calendar")
                         perk("Activity by room", "house")
                         perk("Export activity as CSV", "square.and.arrow.up")
@@ -70,7 +75,16 @@ struct PremiumOptions: View {
                             #if DEBUG
                             Text("For test purchases, run Tidiva from Xcode with Tidiva.storekit selected in the scheme’s Run options.").font(.footnote)
                             #endif
-                            Button("Reload prices") { Task { await load() } }
+                            if let priceMessage { Text(priceMessage).font(.footnote).foregroundStyle(.secondary) }
+                            Button(loadingPrices ? "Loading…" : "Reload prices") { Task { await load() } }
+                                .disabled(loadingPrices || busy)
+                            if !priceDiagnostics.isEmpty {
+                                DisclosureGroup("Purchase support details") {
+                                    Text(verbatim: priceDiagnostics).font(.caption.monospaced())
+                                        .textSelection(.enabled)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }.font(.footnote)
+                            }
                         }
                         if offersTrial, let product {
                             Text(selected.hasSuffix("monthly") ? "7 days free, then \(product.displayPrice) per month." : "7 days free, then \(product.displayPrice) per year.")
@@ -81,6 +95,13 @@ struct PremiumOptions: View {
                         Button("Restore purchases") { Task { await restore() } }.disabled(busy)
                     }
                     if let message { Text(message).font(.footnote) }
+                    HStack {
+                        Link("Privacy policy", destination: URL(string: "https://talinha.com/tidiva/privacy/")!)
+                        Spacer()
+                        Link("Terms of use", destination: URL(string: "https://talinha.com/tidiva/legal/")!)
+                    }.font(.footnote)
+                    Link("Apple Standard EULA", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
+                        .font(.footnote)
                 }.padding(.vertical, 12).frame(maxWidth: .infinity, alignment: .leading)
             }
             VStack(spacing: 3) {
@@ -114,7 +135,6 @@ struct PremiumOptions: View {
 
     private func planRow(_ id: String) -> some View {
         let item = catalog.first { $0.id == id }
-        let monthly = id.hasSuffix("monthly")
         let title = planTitle(id)
         return Button {
             selected = id
@@ -124,9 +144,6 @@ struct PremiumOptions: View {
                 Image(systemName: selected == id ? "checkmark.circle.fill" : "circle")
                 Text(title).font(.headline)
                 Spacer()
-                if monthly, let item, item.priceFormatStyle.currencyCode == "USD", item.price == 5 {
-                    Text(Decimal(10), format: item.priceFormatStyle).strikethrough().foregroundStyle(.secondary)
-                }
                 if let item { Text(item.displayPrice).font(.title3.bold()) }
                 else { Text(loaded ? "Unavailable" : "Loading…").font(.caption) }
             }.padding(16).frame(maxWidth: .infinity)
@@ -138,7 +155,37 @@ struct PremiumOptions: View {
     }
 
     private func load() async {
-        catalog = (try? await Product.products(for: Membership.products)) ?? []
+        guard !loadingPrices else { return }
+        loadingPrices = true
+        defer { loadingPrices = false }
+        priceMessage = nil
+        priceDiagnostics = ""
+        let storefront = await Storefront.current
+        let bundle = Bundle.main.bundleIdentifier ?? "unknown"
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        let context = "App: \(bundle)\nVersion: \(version) (\(build))\nStorefront: \(storefront?.countryCode ?? "unknown")"
+        do {
+            // Only replace a previously loaded catalog after a successful response.
+            catalog = try await Product.products(for: Membership.products)
+            let returned = Set(catalog.map(\.id))
+            let missing = Membership.products.filter { !returned.contains($0) }
+            if !missing.isEmpty {
+                priceMessage = catalog.isEmpty
+                    ? "The App Store returned no Premium offers. You can continue for free and try again later."
+                    : "Some Premium offers are currently unavailable. You can choose an available offer or retry later."
+                priceDiagnostics = context + "\nResult: \(catalog.count)/\(Membership.products.count) products\nMissing: " + missing.joined(separator: ", ")
+                Self.logger.notice("Incomplete product catalog: \(priceDiagnostics, privacy: .public)")
+            }
+        } catch {
+            priceMessage = "Couldn’t load prices from the App Store. Check your connection and try again."
+            let failure = error as NSError
+            priceDiagnostics = context + "\nError: \(failure.domain) (\(failure.code))"
+            if let underlying = failure.userInfo[NSUnderlyingErrorKey] as? NSError {
+                priceDiagnostics += "\nUnderlying: \(underlying.domain) (\(underlying.code))"
+            }
+            Self.logger.error("Product request failed: \(priceDiagnostics, privacy: .public)")
+        }
         if product == nil, let first = Membership.products.first(where: { id in catalog.contains { $0.id == id } }) {
             selected = first
         }

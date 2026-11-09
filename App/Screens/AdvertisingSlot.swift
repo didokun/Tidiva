@@ -41,6 +41,77 @@ struct AdvertisingPrivacyOptions: View {
     }
 }
 
+// One separated, fixed-size banner per browsing screen. No requests while
+// Premium status is unknown, for under-18 profiles, or without consent.
+private struct BrowsingBanner: View {
+    @ObservedObject private var membership = Membership.shared
+    @ObservedObject private var consent = AdConsent.shared
+    @AppStorage("tidiva.profile.age") private var age = 0
+    @State private var loaded = false
+
+    private var eligible: Bool {
+        membership.premium == false && (age == 0 || age >= 18)
+    }
+    private var unit: String {
+        Bundle.main.object(forInfoDictionaryKey: "TidivaBannerID") as? String ?? ""
+    }
+
+    var body: some View {
+        Group {
+            if eligible && consent.ready && ConsentInformation.shared.canRequestAds && !unit.isEmpty {
+                VStack(spacing: 4) {
+                    Text("Advertisement").font(.caption2).foregroundStyle(.secondary)
+                    BannerContainer(unit: unit, loaded: $loaded)
+                        .frame(width: 320, height: 50)
+                }
+                .padding(.vertical, loaded ? 10 : 0)
+                .frame(maxWidth: .infinity)
+                .frame(height: loaded ? 82 : 0)
+                .clipped()
+                .allowsHitTesting(loaded)
+                .background(Theme.paper)
+            }
+        }
+        .task(id: eligible) {
+            if eligible && !unit.isEmpty { await consent.prepare() }
+        }
+    }
+}
+
+private struct BannerContainer: UIViewRepresentable {
+    let unit: String
+    @Binding var loaded: Bool
+
+    func makeUIView(context: Context) -> BannerView {
+        let banner = BannerView(adSize: AdSizeBanner)
+        banner.adUnitID = unit
+        banner.delegate = context.coordinator
+        banner.load(Request())
+        return banner
+    }
+
+    func updateUIView(_ banner: BannerView, context: Context) {
+        context.coordinator.parent = self
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+
+    final class Coordinator: NSObject, BannerViewDelegate {
+        var parent: BannerContainer
+        init(parent: BannerContainer) { self.parent = parent }
+        func bannerViewDidReceiveAd(_ bannerView: BannerView) { parent.loaded = true }
+        func bannerView(_ bannerView: BannerView, didFailToReceiveAdWithError error: Error) {
+            parent.loaded = false
+        }
+    }
+}
+
+extension View {
+    func browsingAdvertising() -> some View {
+        safeAreaInset(edge: .bottom, spacing: 0) { BrowsingBanner() }
+    }
+}
+
 @MainActor final class SessionAdvertising: ObservableObject {
     private var ad: InterstitialAd?
     private var eligible: Bool {
